@@ -44,3 +44,6 @@ int main(){
         test(&b);
         test(&d);
         test(&c);
+		return 0;
+}
+		
