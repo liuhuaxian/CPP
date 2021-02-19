@@ -21,7 +21,7 @@ public:
         cout << "~Test()" << endl;  
     }
     
-    void* operator new (unsigned int size) throw()
+    void* operator new (size_t size) throw()
     {
         cout << "operator new: " << size << endl;
         
@@ -29,6 +29,11 @@ public:
         
         return NULL;
     }
+    void* operator new[] (size_t size) throw()
+    {
+        cout << "operator new[]:" << size << endl;
+        //return malloc(size);
+        return NULL;
     
     void operator delete (void* p)
     {
@@ -36,15 +41,7 @@ public:
         
         free(p);
     }
-    
-    void* operator new[] (unsigned int size) throw()
-    {
-        cout << "operator new[]: " << size << endl;
-        
-        // return malloc(size);
-        
-        return NULL;
-    }
+     
     
     void operator delete[] (void* p)
     {
@@ -102,7 +99,7 @@ void ex_func_2()
 }
 
 void ex_func_3()
-{
+{//不管结果是什么都不要抛出异常,申请内存失败了返回空指针就可以了
     int* p = new(nothrow) int[10];
     
     // ... ...
@@ -116,7 +113,8 @@ void ex_func_3()
         int x;
         int y;
     };
-    
+    //创建对象,将ST的对象创建到bb栈空间里去,在指定的位置
+	//创建一个对象
     ST* pt = new(bb) ST();
     
     pt->x = 1;
