@@ -2,7 +2,26 @@
 #include <new>
 #include <cstdlib>
 #include <exception>
+/*
+malloc 函数申请失败时返回 NULL 值
+    new 关键字申请失败时（根据编译器不同）
+        返回 NULL 值 （古代）
+        抛出 std::bad_alloc 异常 （现代）
+		
+问题： new 语句中的异常是怎么抛出来的呢？
+new 关键字在 C++ 规范中的标准行为   在堆空间申请足够的内存
+成功：在获取的空间中调用构造函数创建对象 返回对象的地址
+失败 抛出 std::bad_alloc 异常
 
+new 关键字在 C++ 规范中的标准行为
+new 在分配内存时,如果空间不足,会调用全局的new_handler()函数,函数中抛出 std::bad_alloc 异常
+可以自定义 new_handler() 函数,处理默认的 new 内存分配失败的情况
+
+new_handler() 中，可以手动做一些内存整理的工作，使得更多的堆空间可以被使用。
+new_handler() 函数的替换,自定义一个无返回值无参数的函数
+调用 set_new_handler() 设置自定义的函数,参数类型为 void(*)(),返回值为默认的 new_handler() 函数入口地址
+
+*/
 using namespace std;
 
 class Test
@@ -27,13 +46,13 @@ public:
         
         // return malloc(size);
         
-        return NULL;
+        return NULL;  // 注意这里！ 模拟内存申请失败
     }
     void* operator new[] (size_t size) throw()
     {
         cout << "operator new[]:" << size << endl;
         //return malloc(size);
-        return NULL;
+        return NULL;// 注意这里！ 模拟内存申请失败
     
     void operator delete (void* p)
     {
@@ -62,6 +81,21 @@ void my_new_handler()//定义一个自己的new_handle()函数
 并且对原始数据进行分割处理。
 new_handler是预定义的函数指针，类型是
 */
+/*首先，namespace std中有如下定义：
+Typedef void  (*new_handler)();
+https://blog.csdn.net/wzxq123/article/details/51502356
+        new_handler  set_new_handler(new_handler  new_p) throw();//C++98
+        new_handler  set_new_handler (new_handler  new_p) noexcept;//C++11
+译文开始：对于函数set_new_handler
+
+函数说明
+
+1.   set_new_handler函数的作用是设置new_p指向的函数为new操作或new[]操作失败时调用的处理函数。
+
+2.   设置的处理函数可以尝试使更多空间变为可分配状态，这样新一次的new操作就可能成功。
+当且仅当该函数成功获得更多可用空间它才会返回；
+否则它将抛出bad_alloc异常（或者继承该异常的子类）或者终止程序（例如调用abort或exit）。		
+		*/
 void ex_func_1()//证明new_handle()全局函数的存在
 {//set_new_handler()返回值是原来的处理函数
     new_handler func = set_new_handler(my_new_handler);
@@ -113,8 +147,7 @@ void ex_func_3()
         int x;
         int y;
     };
-    //创建对象,将ST的对象创建到bb栈空间里去,在指定的位置
-	//创建一个对象
+    //在指定的内存空间上ST创建对象
     ST* pt = new(bb) ST();
     
     pt->x = 1;
@@ -123,7 +156,7 @@ void ex_func_3()
     cout << bb[0] << endl;
     cout << bb[1] << endl;
     
-    pt->~ST();
+    pt->~ST();//需要手动调用析构函数
 }
 
 int main(int argc, char *argv[])
